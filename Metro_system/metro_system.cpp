@@ -1,7 +1,7 @@
-// metro_system.cpp
 #include "metro_system.hpp"
 #include "../Stations/transitionstation.hpp"
 #include <stdexcept>
+#include <algorithm>
 namespace mgm {
 
 void MetroSystem::addLine(const string &lineName) {
@@ -64,44 +64,40 @@ std::shared_ptr<station> MetroSystem::findTransitionStationByName(const string &
                 return st;
         }
         catch (...) {
-            // Continue searching
         }
     }
     throw std::invalid_argument("Error: Transition station not found.");
 }
 
 void MetroSystem::validateSystem() {
-    for (auto &linePair : lines) {
+    std::for_each(lines.begin(), lines.end(), [this](auto &linePair) {
         Line &line = linePair.second;
-        for (const auto &st_ptr : line.getStations()) {
-            if (st_ptr->getType() == "transition") {
-                transition_station* ts = dynamic_cast<transition_station*>(st_ptr.get());
+        std::for_each(line.getStations().begin(), line.getStations().end(), [this](const auto &stationPair) {
+            if (stationPair.second->getType() == "transition") {
+                transition_station* ts = dynamic_cast<transition_station*>(stationPair.second.get());
                 if (ts) {
                     auto &connections = ts->get_station_list();
-                    for (auto it = connections.begin(); it != connections.end(); ) {
-                        const string &targetStation = it->first;
-                        const string &targetLine = it->second;
-                        bool valid = false;
-                        auto targetLineIt = lines.find(targetLine);
-                        if (targetLineIt != lines.end()) {
+                    auto new_end = std::remove_if(connections.begin(), connections.end(),
+                        [this](const std::pair<string, string>& conn) -> bool {
+                            const string &targetStation = conn.first;
+                            const string &targetLine = conn.second;
+                            auto targetLineIt = lines.find(targetLine);
+                            if (targetLineIt == lines.end())
+                                return true;
                             try {
                                 targetLineIt->second.find(targetStation);
-                                valid = true;
+                                return false;
+                            } catch (...) {
+                                return true;
                             }
-                            catch (...) {
-                                valid = false;
-                            }
-                        }
-                        if (!valid)
-                            it = connections.erase(it);
-                        else
-                            ++it;
-                    }
+                        });
+                    connections.erase(new_end, connections.end());
                 }
             }
-        }
-    }
+        });
+    });
 }
+
 
 std::string MetroSystem::getSystemDescription() const {
     string oss;

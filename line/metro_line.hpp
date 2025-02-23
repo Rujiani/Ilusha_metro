@@ -3,12 +3,9 @@
 
 #include <ostream>
 #include <memory>
-#include <unordered_set>
 #include <string>
 #include "../Stations/station.hpp"
-
-template<class T>
-using Table = std::unordered_set<T>;
+#include "../container/lookUpTable.hpp"
 
 using std::shared_ptr;
 using std::string;
@@ -17,10 +14,12 @@ namespace mgm {
 
 /**
  * @brief Represents a metro line consisting of stations.
+ *
+ * This class stores stations in a LookupTable mapping station names to shared pointers to stations.
  */
 class Line {
     string name;
-    Table<shared_ptr<station>> stations_table;
+    mgc::LookupTable<string, shared_ptr<station>> stations_table;
 public:
     /**
      * @brief Default constructor.
@@ -40,17 +39,19 @@ public:
     string getName() const { return name; }
 
     /**
-    * @brief Adds a station to the line while preserving its dynamic type.
-    * @tparam T The type of station to add. Must be derived from station.
-    * @param st The station object to add.
-    * @throws std::invalid_argument if a station with the same name already exists.
-    */
+     * @brief Adds a station to the line while preserving its dynamic type.
+     * @tparam T The type of the station to add. Must be derived from station.
+     * @param st The station object to add.
+     * @throws std::invalid_argument if a station with the same name already exists.
+     */
     template<typename T>
     requires std::is_base_of_v<station, std::decay_t<T>>
     void addElement(T &&st) {
-        auto res = stations_table.emplace(std::make_shared<std::decay_t<T>>(std::forward<T>(st)));
-        if (!res.second)
+        string key = st.getName();
+        if (stations_table.find(key) != stations_table.size())
             throw std::invalid_argument("Error: Station already exists on this line.");
+        auto ptr = std::make_shared<std::decay_t<T>>(std::forward<T>(st));
+        stations_table.insert(key, ptr);
     }
 
     /**
@@ -81,18 +82,11 @@ public:
      */
     std::ostream &showTable(std::ostream &ost) const;
 
-    bool operator==(const Line &other) const noexcept { return name == other.name; }
-    bool operator!=(const Line &other) const noexcept { return name != other.name; }
-    bool operator>(const Line &other) const noexcept { return name > other.name; }
-    bool operator>=(const Line &other) const noexcept { return name >= other.name; }
-    bool operator<(const Line &other) const noexcept { return name < other.name; }
-    bool operator<=(const Line &other) const noexcept { return name <= other.name; }
-
     /**
      * @brief Provides access to the underlying station table.
-     * @return A constant reference to the station table.
+     * @return A constant reference to the LookupTable.
      */
-    const Table<shared_ptr<station>> &getStations() const { return stations_table; }
+    const mgc::LookupTable<string, shared_ptr<station>> &getStations() const { return stations_table; }
 };
 
 } // namespace mgm
