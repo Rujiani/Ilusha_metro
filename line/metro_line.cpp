@@ -1,40 +1,47 @@
 #include "metro_line.hpp"
-#include <utility>
 #include <stdexcept>
 #include <algorithm>
-
 namespace mgm {
 
-void Line::addElement(station &&st){
-    auto res = 
-        stations_table.emplace(std::make_shared<station>(std::forward<station>(st)));
-    
-    if(!res.second)
-        throw std::invalid_argument("Error: Such line is already exist");
+void Line::addElement(station &&st) {
+    auto res = stations_table.emplace(std::make_shared<station>(std::move(st)));
+    if (!res.second)
+        throw std::invalid_argument("Error: Station already exists on this line.");
 }
 
-shared_ptr<station> Line::find(const string &name)const{
-    auto pos = std::find_if(stations_table.begin(), stations_table.end(), [&name](auto &i){
-        if(i->getName() == name)
-            return true;
-        return false;
-    });
-    if(pos == stations_table.end())
-        throw std::invalid_argument("Error: No such station");
-    return *pos;
+shared_ptr<station> Line::find(const string &name) const {
+    auto it = std::find_if(stations_table.begin(), stations_table.end(),
+                           [&name](const shared_ptr<station> &st) {
+                               return st->getName() == name;
+                           });
+    if (it == stations_table.end())
+        throw std::invalid_argument("Error: Station not found on this line.");
+    return *it;
 }
 
-string Line::getTableStr()const{
+void Line::removeElement(const string &stationName) {
+    auto it = std::find_if(stations_table.begin(), stations_table.end(),
+                           [&stationName](const shared_ptr<station>& st) {
+                               return st->getName() == stationName;
+                           });
+    if (it != stations_table.end()) {
+        stations_table.erase(it);
+    } else {
+        throw std::invalid_argument("Error: Station not found in line.");
+    }
+}
+
+string Line::getTableStr() const {
     string res;
-    for(const auto &i : stations_table){
-        res += i->getName() + '-' + i->getType() + '\n';
+    for (const auto &st : stations_table) {
+        res += st->getName() + '-' + st->getType() + '\n';
     }
     return res;
 }
 
-std::ostream& Line::showTable(std::ostream &ost)const{
+std::ostream &Line::showTable(std::ostream &ost) const {
     ost << getTableStr();
     return ost;
 }
 
-}
+} // namespace mgm

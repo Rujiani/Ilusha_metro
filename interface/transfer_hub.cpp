@@ -30,4 +30,13 @@ string transfer_hub::get_stations_lines_names()const{
         [&result](auto &i){result += i.first + '-' + i.second + '\n';});
     return result;        
 }
+
+const std::list<std::pair<string, string>>& transfer_hub::get_station_list()const{
+    return station_name_line;
+}
+
+std::list<std::pair<string, string>>& transfer_hub::get_station_list(){
+    return station_name_line;
+};
+
 }
