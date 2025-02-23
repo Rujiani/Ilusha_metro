@@ -40,10 +40,18 @@ public:
     string getName() const { return name; }
 
     /**
-     * @brief Adds a station to the line.
-     * @param st The station to add.
-     */
-    void addElement(station &&st);
+    * @brief Adds a station to the line while preserving its dynamic type.
+    * @tparam T The type of station to add. Must be derived from station.
+    * @param st The station object to add.
+    * @throws std::invalid_argument if a station with the same name already exists.
+    */
+    template<typename T>
+    requires std::is_base_of_v<station, std::decay_t<T>>
+    void addElement(T &&st) {
+        auto res = stations_table.emplace(std::make_shared<std::decay_t<T>>(std::forward<T>(st)));
+        if (!res.second)
+            throw std::invalid_argument("Error: Station already exists on this line.");
+    }
 
     /**
      * @brief Finds a station on the line by name.

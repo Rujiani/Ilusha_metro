@@ -3,12 +3,6 @@
 #include <algorithm>
 namespace mgm {
 
-void Line::addElement(station &&st) {
-    auto res = stations_table.emplace(std::make_shared<station>(std::move(st)));
-    if (!res.second)
-        throw std::invalid_argument("Error: Station already exists on this line.");
-}
-
 shared_ptr<station> Line::find(const string &name) const {
     auto it = std::find_if(stations_table.begin(), stations_table.end(),
                            [&name](const shared_ptr<station> &st) {
