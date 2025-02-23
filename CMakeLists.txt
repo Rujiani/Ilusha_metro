@@ -12,3 +12,7 @@ add_subdirectory(line)
 add_subdirectory(Metro_system)
 add_subdirectory(Stations)
 add_subdirectory(tests)
+add_subdirectory(UI)
+
+add_executable(metro main.cpp)
+target_link_libraries(metro UI MetroSystem)
